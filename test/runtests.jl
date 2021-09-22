@@ -20,6 +20,8 @@ function test_magic()
     close(f)
 end
 
+test_magic()
+
 @testset "ELF2.jl" begin
     # Write your tests here.
 
