@@ -16,6 +16,7 @@ function test_magic()
 
     pprint(elf)
     println()
+    println(ELF2.show_ELFDATA(elf.ehdr.e_data))
 
     close(f)
 end

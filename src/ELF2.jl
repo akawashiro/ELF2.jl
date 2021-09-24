@@ -21,6 +21,30 @@ const ELFDATANONE = 0
 const ELFDATA2LSB = 1
 const ELFDATA2MSB = 2
 
+macro show_const_case(d, c)
+    return quote
+        if $(esc(d)) == $(esc(c))
+            return string($(esc(c)))
+        end
+    end
+end
+
+function show_ELFDATA(d::UInt8)
+    @show_const_case(d, ELFDATANONE)
+    # Above line should be
+    # 
+    # if d == ELFDATANONE
+    #     return "ELFDATANONE"
+    # end
+    if d == ELFDATA2LSB
+        return "ELFDATA2LSB"
+    end
+    if d == ELFDATA2MSB
+        return "ELFDATA2MSB"
+    end
+    error("$(d) is not legitimate")
+end
+
 # e_version constants
 const EV_NONE = 0       #Invalid Version
 const EV_CURRENT = 1    #Current Version
@@ -65,6 +89,12 @@ mutable struct Ehdr
     Ehdr() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 end
 
+mutable struct Dyn
+    d_tag::UInt64
+    d_val_or_ptr::UInt64
+    Dyn() = new(0, 0)
+end
+
 mutable struct Phdr
     p_type::UInt32
     p_flags::UInt32
@@ -100,6 +130,19 @@ end
 
 macro read_field(io, field)
     return :( $(esc(field)) = read($(esc(io)), typeof($(esc(field)))) )
+end
+
+# TODO: Use this macro
+macro read_field_from_io(field)
+    return :( $(esc(field)) = read(io, typeof($(esc(field)))) )
+end
+
+function read_dyn(io::IOStream)
+    dyn = Dyn()
+
+    read_field(io, dyn.d_tag)
+    read_field(io, dyn.d_val_or_ptr)
+    return dyn
 end
 
 function read_ehdr(io::IOStream)
