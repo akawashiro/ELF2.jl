@@ -28,9 +28,11 @@ const EI_MAG3 = 3 # File identification byte 3 index
 const ELFMAG3 = UInt8('F') # Magic number byte 3
 
 # e_indent[EIBCLASS]
-const ELFCLASSNONE = 0 #Invalid class
-const ELFCLASS32 = 1 #32-bit objects
-const ELFCLASS64 = 2 #64-bit objects
+@constants ELFCLASS "" begin
+    const ELFCLASSNONE = 0 #Invalid class
+    const ELFCLASS32 = 1 #32-bit objects
+    const ELFCLASS64 = 2 #64-bit objects
+end
 
 # e_ident[EIDATA]
 @constants ELFDATA "" begin
@@ -570,4 +572,39 @@ end
     const OLD_DT_HIOS     = 0x6fffffff
     const DT_LOPROC       = 0x70000000
     const DT_HIPROC       = 0x7fffffff
+    const DT_VALRNGLO	= 0x6ffffd00
+    const DT_GNU_PRELINKED = 0x6ffffdf5	# Prelinking timestamp
+    const DT_GNU_CONFLICTSZ = 0x6ffffdf6	# Size of conflict section */
+    const DT_GNU_LIBLISTSZ = 0x6ffffdf7	# Size of library list */
+    const DT_CHECKSUM	= 0x6ffffdf8
+    const DT_PLTPADSZ	= 0x6ffffdf9
+    const DT_MOVEENT	= 0x6ffffdfa
+    const DT_MOVESZ	= 0x6ffffdfb
+    const DT_FEATURE_1	= 0x6ffffdfc	# Feature selection (DTF_*).  */
+    const DT_POSFLAG_1	= 0x6ffffdfd	# Flags for DT_* entries, effecting
+    const DT_SYMINSZ	= 0x6ffffdfe	# Size of syminfo table (in bytes) */
+    const DT_SYMINENT	= 0x6ffffdff	# Entry size of syminfo */
+    const DT_VALRNGHI	= 0x6ffffdff
+    const DT_VALNUM = 12
+    const DT_ADDRRNGLO	= 0x6ffffe00
+    const DT_GNU_HASH	= 0x6ffffef5	# GNU-style hash table.  */
+    const DT_TLSDESC_PLT	= 0x6ffffef6
+    const DT_TLSDESC_GOT	= 0x6ffffef7
+    const DT_GNU_CONFLICT	= 0x6ffffef8	# Start of conflict section */
+    const DT_GNU_LIBLIST	= 0x6ffffef9	# Library list */
+    const DT_CONFIG	= 0x6ffffefa	# Configuration information.  */
+    const DT_DEPAUDIT	= 0x6ffffefb	# Dependency auditing.  */
+    const DT_AUDIT	= 0x6ffffefc	# Object auditing.  */
+    const DT_PLTPAD	= 0x6ffffefd	# PLT padding.  */
+    const DT_MOVETAB	= 0x6ffffefe	# Move table.  */
+    const DT_SYMINFO	= 0x6ffffeff	# Syminfo table.  */
+    const DT_ADDRRNGHI	= 0x6ffffeff
+    const DT_VERSYM	= 0x6ffffff0
+    const DT_RELACOUNT	= 0x6ffffff9
+    const DT_RELCOUNT	= 0x6ffffffa
+    const DT_FLAGS_1	= 0x6ffffffb	# State flags, see DF_1_* below.  */
+    const DT_VERDEF	= 0x6ffffffc	# Address of version definition
+    const DT_VERDEFNUM	= 0x6ffffffd	# Number of version definitions */
+    const DT_VERNEED	= 0x6ffffffe	# Address of table with needed
+    const DT_VERNEEDNUM	= 0x6fffffff	# Number of needed versions */
 end

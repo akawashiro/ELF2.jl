@@ -1,12 +1,28 @@
 module ELF2
 
+using PrettyPrint
+
 include("constants.jl")
 
 function show_ELFDATA(d::UInt8)
     if haskey(ELFDATA, d)
         return ELFDATA[d]
     end
-    error("$(d) is not legitimate")
+    error("$(d) is not legitimate as ELFDATA")
+end
+
+function show_DYNAMIC_TYPE(d::UInt64)
+    if haskey(DYNAMIC_TYPE, d)
+        return DYNAMIC_TYPE[d]
+    end
+    error("0x$(string(d, 16)) is not legitimate as DYNAMIC_TYPE")
+end
+
+function show_ELFCLASS(d::UInt8)
+    if haskey(ELFCLASS, d)
+        return ELFCLASS[d]
+    end
+    error("$(d) is not legitimate as ELFCLASS")
 end
 
 const EI_NIDENT = 16
@@ -37,10 +53,19 @@ mutable struct Ehdr
     Ehdr() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 end
 
+function Base.show(io, ehdr::Ehdr)
+    ret = "Ehdr(e_class=$(show_ELFCLASS(ehdr.e_class))"
+    print(ret)
+end
+
 mutable struct Dyn
     d_tag::UInt64
     d_val_or_ptr::UInt64
     Dyn() = new(0, 0)
+end
+
+function Base.show(io::IO, dyn::Dyn)
+    print("Dyn($(show_DYNAMIC_TYPE(dyn.d_tag)), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))")
 end
 
 mutable struct Phdr
@@ -195,5 +220,6 @@ function read_elf(io::IOStream)
 
     return elf
 end
+
 
 end

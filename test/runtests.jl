@@ -1,6 +1,5 @@
 using ELF2
 using Test
-using PrettyPrint
 
 function test_magic()
     f = open("libmax.so", "r")
@@ -14,14 +13,10 @@ function test_magic()
     @test elf.ehdr.e_fversion == ELF2.EV_CURRENT
     @test elf.ehdr.e_type == ELF2.ET_DYN
 
-    pprint(elf)
-    println()
-    println(ELF2.show_ELFDATA(elf.ehdr.e_data))
+    print(elf)
 
     close(f)
 end
-
-test_magic()
 
 @testset "ELF2.jl" begin
     # Write your tests here.
