@@ -86,12 +86,12 @@ mutable struct ELF
 end
 
 macro read_field(io, field)
-    return :( $(esc(field)) = read($(esc(io)), typeof($(esc(field)))) )
+    return :($(esc(field)) = read($(esc(io)), typeof($(esc(field)))))
 end
 
 # TODO: Use this macro
 macro read_field_from_io(field)
-    return :( $(esc(field)) = read(io, typeof($(esc(field)))) )
+    return :($(esc(field)) = read(io, typeof($(esc(field)))))
 end
 
 function read_dyn(io::IOStream)
@@ -137,7 +137,7 @@ function read_ehdr(io::IOStream)
     @assert ehdr.e_ident2 == ELF2.ELFMAG1
     @assert ehdr.e_ident3 == ELF2.ELFMAG2
     @assert ehdr.e_ident4 == ELF2.ELFMAG3
-    return ehdr 
+    return ehdr
 end
 
 function read_phdr(io::IOStream)
@@ -187,7 +187,7 @@ function read_elf(io::IOStream)
         end
     end
 
-    @assert count(p->p.p_type==PT_DYNAMIC, elf.phdrs) < 2
+    @assert count(p -> p.p_type == PT_DYNAMIC, elf.phdrs) < 2
     for p in elf.phdrs
         if p.p_type == PT_DYNAMIC
             seek(io, p.p_offset)
