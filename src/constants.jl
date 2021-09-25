@@ -286,6 +286,7 @@ end
     const SHT_PREINIT_ARRAY = 16
     const SHT_GROUP = 17
     const SHT_SYMTAB_SHNDX = 18
+    const SHT_GNU_HASH = 0x6ffffff6
 end
 
 @constants SHT_MASKS "" begin
@@ -369,6 +370,7 @@ end
     const PT_GNU_EH_FRAME = 0x6474e550
     const PT_GNU_STACK = 0x6474e551
     const PT_GNU_RELRO = 0x6474e552
+    const PT_GNU_PROPERTY = 0x6474e553	# GNU property
     const PT_PAX_FLAGS = 0x65041580
     const PT_HIOS = 0x6fffffff
     const PT_LOPROC = 0x70000000

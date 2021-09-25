@@ -37,7 +37,7 @@ mutable struct Ehdr
 end
 
 function Base.show(io::IO, e::Ehdr)
-    ret = "Ehdr(e_class=$(ELFCLASS[e.e_class]), e_data=$(ELFDATA[e.e_data]), e_fversion=$(ELFVERSION[e.e_fversion]), e_osabi=$(ELFOSABI[e.e_osabi]), e_abiversion=$(hex(e.e_abiversion)), e_type=$(ET_TYPES[e.e_type]), e_machine=$(EM_MACHINES[e.e_machine]), e_version=$(hex(e.e_version)), e_entry=$(hex(e.e_entry)), e_phoff=$(hex(e.e_phoff)), e_shoff=$(hex(e.e_shoff)), e_flags=$(hex(e.e_flags)), e_ehsize=$(hex(e.e_ehsize)), e_phentsize=$(hex(e.e_phentsize)), e_phnum=$(hex(e.e_phnum)), e_shentsize=$(hex(e.e_shentsize)), e_shnum=$(e.e_shnum), e_shstrndx=$(string(e.e_shstrndx)))"
+    ret = """Ehdr(e_class=$(ELFCLASS[e.e_class]), e_data=$(ELFDATA[e.e_data]), e_fversion=$(ELFVERSION[e.e_fversion]), e_osabi=$(ELFOSABI[e.e_osabi]), e_abiversion=$(hex(e.e_abiversion)), e_type=$(ET_TYPES[e.e_type]), e_machine=$(EM_MACHINES[e.e_machine]), e_version=$(hex(e.e_version)), e_entry=$(hex(e.e_entry)), e_phoff=$(hex(e.e_phoff)), e_shoff=$(hex(e.e_shoff)), e_flags=$(hex(e.e_flags)), e_ehsize=$(hex(e.e_ehsize)), e_phentsize=$(hex(e.e_phentsize)), e_phnum=$(hex(e.e_phnum)), e_shentsize=$(hex(e.e_shentsize)), e_shnum=$(e.e_shnum), e_shstrndx=$(string(e.e_shstrndx)))"""
     print(ret)
 end
 
@@ -63,6 +63,27 @@ mutable struct Phdr
     Phdr() = new(0, 0, 0, 0, 0, 0, 0, 0)
 end
 
+function show_PF(f::UInt32)
+    ret::Vector{String} = []
+    if (f & PF_R) == PF_R
+        push!(ret, "PF_R")
+    end
+    if (f & PF_W) == PF_W
+        push!(ret, "PF_W")
+    end
+    if (f & PF_X) == PF_X
+        push!(ret, "PF_X")
+    end
+
+    @assert size(ret)[1] != 0
+    return join(ret, "+")
+end
+
+function Base.show(io::IO, p::Phdr)
+    ret = "Phdr(p_type=$(P_TYPE[p.p_type]), p_flags=$(show_PF(p.p_flags)), p_offset=$(hex(p.p_offset)), p_vaddr=$(hex(p.p_vaddr)), p_paddr=$(hex(p.p_paddr)), p_filesz=$(hex(p.p_filesz)), p_memsz=$(p.p_memsz), p_align=$(hex(p.p_align)))"
+    print(ret)
+end
+
 mutable struct Shdr
     sh_name::UInt32
     sh_type::UInt32
@@ -75,6 +96,22 @@ mutable struct Shdr
     sh_addralign::UInt64
     sh_entsize::UInt64
     Shdr() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+end
+
+function show_SHF_FLAGS(f::UInt64)
+    ret::Vector{String} = []
+    for (value, name) in SHF_FLAGS
+        if (f & value) == value
+            push!(ret, name)
+        end
+    end
+
+    return join(ret, "+")
+end
+
+function Base.show(io::IO, s::Shdr)
+    ret = "Shdr(sh_name=$(hex(s.sh_name)), sh_type=$(SHT_TYPES[s.sh_type]), sh_flags=$(show_SHF_FLAGS(s.sh_flags)), sh_addr=$(hex(s.sh_addr)), sh_offset=$(hex(s.sh_offset)), sh_size=$(hex(s.sh_size)), sh_link=$(s.sh_link), sh_info=$(hex(s.sh_info)), sh_addralign=$(hex(s.sh_addralign)), sh_entsize=$(hex(s.sh_entsize)))"
+    print(ret)
 end
 
 mutable struct ELF
