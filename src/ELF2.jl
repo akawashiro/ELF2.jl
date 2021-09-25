@@ -4,28 +4,11 @@ using PrettyPrint
 
 include("constants.jl")
 
-function show_ELFDATA(d::UInt8)
-    if haskey(ELFDATA, d)
-        return ELFDATA[d]
-    end
-    error("$(d) is not legitimate as ELFDATA")
-end
-
-function show_DYNAMIC_TYPE(d::UInt64)
-    if haskey(DYNAMIC_TYPE, d)
-        return DYNAMIC_TYPE[d]
-    end
-    error("0x$(string(d, 16)) is not legitimate as DYNAMIC_TYPE")
-end
-
-function show_ELFCLASS(d::UInt8)
-    if haskey(ELFCLASS, d)
-        return ELFCLASS[d]
-    end
-    error("$(d) is not legitimate as ELFCLASS")
-end
-
 const EI_NIDENT = 16
+
+function hex(n)
+    return string("0x", string(n, 16))
+end
 
 mutable struct Ehdr
     e_ident1::UInt8
@@ -53,8 +36,8 @@ mutable struct Ehdr
     Ehdr() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 end
 
-function Base.show(io, ehdr::Ehdr)
-    ret = "Ehdr(e_class=$(show_ELFCLASS(ehdr.e_class))"
+function Base.show(io::IO, e::Ehdr)
+    ret = "Ehdr(e_class=$(ELFCLASS[e.e_class]), e_data=$(ELFDATA[e.e_data]), e_fversion=$(ELFVERSION[e.e_fversion]), e_osabi=$(ELFOSABI[e.e_osabi]), e_abiversion=$(hex(e.e_abiversion)), e_type=$(ET_TYPES[e.e_type]), e_machine=$(EM_MACHINES[e.e_machine]), e_version=$(hex(e.e_version)), e_entry=$(hex(e.e_entry)), e_phoff=$(hex(e.e_phoff)), e_shoff=$(hex(e.e_shoff)), e_flags=$(hex(e.e_flags)), e_ehsize=$(hex(e.e_ehsize)), e_phentsize=$(hex(e.e_phentsize)), e_phnum=$(hex(e.e_phnum)), e_shentsize=$(hex(e.e_shentsize)), e_shnum=$(e.e_shnum), e_shstrndx=$(string(e.e_shstrndx)))"
     print(ret)
 end
 
@@ -65,7 +48,7 @@ mutable struct Dyn
 end
 
 function Base.show(io::IO, dyn::Dyn)
-    print("Dyn($(show_DYNAMIC_TYPE(dyn.d_tag)), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))")
+    print("Dyn($(DYNAMIC_TYPE[dyn.d_tag]), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))")
 end
 
 mutable struct Phdr

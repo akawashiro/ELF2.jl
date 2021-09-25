@@ -42,25 +42,28 @@ end
 end
 
 # e_version constants
-const EV_NONE = 0       #Invalid Version
-const EV_CURRENT = 1    #Current Version
+@constants ELFVERSION "" begin
+    const EV_NONE = 0       #Invalid Version
+    const EV_CURRENT = 1    #Current Version
+end
 
 # e_type constants
-@constants ET_TYPES "ET_" begin
+@constants ET_TYPES "" begin
     const ET_NONE = 0   #No file type
     const ET_REL  = 1   #Relocatable file
     const ET_EXEC = 2   #Executable file
     const ET_DYN  = 3   #Shared object file
     const ET_CORE = 4   #Core file
 end
-@constants ET_RANGES "ET_" begin
+
+@constants ET_RANGES "" begin
     const ET_LOOS       = 0xfe00  #Operating system-specific
     const ET_HIOS       = 0xfeff  #Operating system-specific
     const ET_LOPROC     = 0xff00  #Processor-specific
     const ET_HIPROC     = 0xffff  #Processor-specific
 end
 
-@constants EM_MACHINES "EM_" begin
+@constants EM_MACHINES "" begin
     # e_machine constants
     const EM_NONE = 0   #No machine
     const EM_M32  = 1   #AT&T WE 32100
@@ -232,36 +235,40 @@ end
 end
 
 #EI_OSABI constants
-const ELFOSABI_NONE   = 0   #No extensions or unspecified
-const ELFOSABI_HPUX   = 1   #Hewlett-Packard HP-UX
-const ELFOSABI_NETBSD = 2   #NetBSD
-const ELFOSABI_GNU    = 3   #GNU
-const ELFOSABI_LINUX  = 3   ##Linux historical - alias for ELFOSABI_GNU
-const ELFOSABI_SOLARIS    = 6   #Sun Solaris
-const ELFOSABI_AIX    = 7   #AIX
-const ELFOSABI_IRIX   = 8   #IRIX
-const ELFOSABI_FREEBSD    = 9   #FreeBSD
-const ELFOSABI_TRU64  = 10  #Compaq TRU64 UNIX
-const ELFOSABI_MODESTO    = 11  #Novell Modesto
-const ELFOSABI_OPENBSD    = 12  #Open BSD
-const ELFOSABI_OPENVMS    = 13  #Open VMS
-const ELFOSABI_NSK    = 14  #Hewlett-Packard Non-Stop Kernel
-const ELFOSABI_AROS   = 15  #Amiga Research OS
+@constants ELFOSABI "" begin
+    const ELFOSABI_NONE   = 0   #No extensions or unspecified
+    const ELFOSABI_HPUX   = 1   #Hewlett-Packard HP-UX
+    const ELFOSABI_NETBSD = 2   #NetBSD
+    const ELFOSABI_GNU    = 3   #GNU
+    const ELFOSABI_LINUX  = 3   ##Linux historical - alias for ELFOSABI_GNU
+    const ELFOSABI_SOLARIS    = 6   #Sun Solaris
+    const ELFOSABI_AIX    = 7   #AIX
+    const ELFOSABI_IRIX   = 8   #IRIX
+    const ELFOSABI_FREEBSD    = 9   #FreeBSD
+    const ELFOSABI_TRU64  = 10  #Compaq TRU64 UNIX
+    const ELFOSABI_MODESTO    = 11  #Novell Modesto
+    const ELFOSABI_OPENBSD    = 12  #Open BSD
+    const ELFOSABI_OPENVMS    = 13  #Open VMS
+    const ELFOSABI_NSK    = 14  #Hewlett-Packard Non-Stop Kernel
+    const ELFOSABI_AROS   = 15  #Amiga Research OS
+end
 
 # Special Section Indices
-const SHN_UNDEF   = 0
-const SHN_LORESERVE   = 0xff00
-const SHN_LOPROC  = 0xff00
-const SHN_HIPROC  = 0xff1f
-const SHN_LOOS    = 0xff20
-const SHN_HIOS    = 0xff3f
-const SHN_ABS     = 0xfff1
-const SHN_COMMON  = 0xfff2
-const SHN_XINDEX  = 0xffff
-const SHN_HIRESERVE   = 0xffff
+@constants SHN_INDICES "" begin
+    const SHN_UNDEF   = 0
+    const SHN_LORESERVE   = 0xff00
+    const SHN_LOPROC  = 0xff00
+    const SHN_HIPROC  = 0xff1f
+    const SHN_LOOS    = 0xff20
+    const SHN_HIOS    = 0xff3f
+    const SHN_ABS     = 0xfff1
+    const SHN_COMMON  = 0xfff2
+    const SHN_XINDEX  = 0xffff
+    const SHN_HIRESERVE   = 0xffff
+end
  
 # sh_type constants
-@constants SHT_TYPES "SHT_" begin
+@constants SHT_TYPES "" begin
     const SHT_NULL          =  0
     const SHT_PROGBITS      =  1
     const SHT_SYMTAB        =  2
@@ -280,7 +287,8 @@ const SHN_HIRESERVE   = 0xffff
     const SHT_GROUP         = 17
     const SHT_SYMTAB_SHNDX  = 18
 end
-@constants SHT_MASKS "SHT_" begin
+
+@constants SHT_MASKS "" begin
     const SHT_LOOS          = 0x60000000
     const SHT_HIOS          = 0x6fffffff
     const SHT_LOPROC        = 0x70000000
@@ -290,7 +298,7 @@ end
 end
 
 # Section Attribute Flags
-@constants SHF_FLAGS "SHF_" begin
+@constants SHF_FLAGS "" begin
     const SHF_WRITE                 =   0x1
     const SHF_ALLOC                 =   0x2
     const SHF_EXECINSTR             =   0x4
@@ -302,7 +310,8 @@ end
     const SHF_GROUP                 = 0x200
     const SHF_TLS                   = 0x400
 end
-@constants SHF_MASKS "SHF_" begin
+
+@constants SHF_MASKS "" begin
     const SHF_MASKOS                = 0x0f000000
     const SHF_MASKPROC              = 0xf0000000
 end
@@ -313,35 +322,41 @@ const GRP_MASKOS  = 0x0ff00000
 const GRP_MASKPROC    = 0xf0000000
  
 # Symbol Binding
-const STB_LOCAL   = 0
-const STB_GLOBAL  = 1
-const STB_WEAK    = 2
-const STB_LOOS    = 10
-const STB_HIOS    = 12
-const STB_LOPROC  = 13
-const STB_HIPROC  = 15
+@constants STB_BINDING "" begin
+    const STB_LOCAL   = 0
+    const STB_GLOBAL  = 1
+    const STB_WEAK    = 2
+    const STB_LOOS    = 10
+    const STB_HIOS    = 12
+    const STB_LOPROC  = 13
+    const STB_HIPROC  = 15
+end
  
 # Symbol Types
-const STT_NOTYPE  = 0
-const STT_OBJECT  = 1
-const STT_FUNC    = 2
-const STT_SECTION = 3
-const STT_FILE    = 4
-const STT_COMMON  = 5
-const STT_TLS = 6
-const STT_LOOS    = 10
-const STT_HIOS    = 12
-const STT_LOPROC  = 13
-const STT_HIPROC  = 15
+@constants STT_TYPES "" begin
+    const STT_NOTYPE  = 0
+    const STT_OBJECT  = 1
+    const STT_FUNC    = 2
+    const STT_SECTION = 3
+    const STT_FILE    = 4
+    const STT_COMMON  = 5
+    const STT_TLS = 6
+    const STT_LOOS    = 10
+    const STT_HIOS    = 12
+    const STT_LOPROC  = 13
+    const STT_HIPROC  = 15
+end
  
 # Symbol Visibility
-const STV_DEFAULT = 0
-const STV_INTERNAL    = 1
-const STV_HIDDEN  = 2
-const STV_PROTECTED   = 3
+@constants STV_VISIBILITY "" begin
+    const STV_DEFAULT = 0
+    const STV_INTERNAL    = 1
+    const STV_HIDDEN  = 2
+    const STV_PROTECTED   = 3
+end
  
 # ptype constants
-@constants P_TYPE "PT_" begin
+@constants P_TYPE "" begin
     const PT_NULL           = 0
     const PT_LOAD           = 1
     const PT_DYNAMIC        = 2
@@ -361,11 +376,13 @@ const STV_PROTECTED   = 3
 end
  
 # p_flags constants
-const PF_X    = 0x1 #Execute
-const PF_W    = 0x2 #Write
-const PF_R    = 0x4 #Read
-const PF_MASKOS   = 0x0ff00000  #Unspecified
-const PF_MASKPROC = 0xf0000000  #Unspecified
+@constants PF "" begin
+    const PF_X    = 0x1 #Execute
+    const PF_W    = 0x2 #Write
+    const PF_R    = 0x4 #Read
+    const PF_MASKOS   = 0x0ff00000  #Unspecified
+    const PF_MASKPROC = 0xf0000000  #Unspecified
+end
  
 # X86_64 relocations
 @constants R_X86_64 "" begin
@@ -521,7 +538,7 @@ end
     const AT_SYSINFO_EHDR = 33
 end
 
-@constants DYNAMIC_TYPE "DT_" begin
+@constants DYNAMIC_TYPE "" begin
     const DT_NULL         = 0
     const DT_NEEDED       = 1
     const DT_PLTRELSZ     = 2
