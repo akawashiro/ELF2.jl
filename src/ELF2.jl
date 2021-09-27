@@ -65,14 +65,10 @@ end
 
 function show_PF(f::UInt32)
     ret::Vector{String} = []
-    if (f & PF_R) == PF_R
-        push!(ret, "PF_R")
-    end
-    if (f & PF_W) == PF_W
-        push!(ret, "PF_W")
-    end
-    if (f & PF_X) == PF_X
-        push!(ret, "PF_X")
+    for (value, name) in PF
+        if (f & value) == value
+            push!(ret, name)
+        end
     end
 
     @assert size(ret)[1] != 0
