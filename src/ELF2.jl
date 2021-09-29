@@ -7,7 +7,7 @@ include("constants.jl")
 const EI_NIDENT = 16
 
 function hex(n)
-    return string("0x", string(n, 16))
+    return string("0x", string(n, base=16))
 end
 
 mutable struct Ehdr
@@ -115,9 +115,22 @@ mutable struct ELF
     phdrs::Vector{Phdr}
     shdrs::Vector{Shdr}
     dyns::Vector{Dyn}
-    strtab::Dict{UInt64, String}
-    shstrtab::Dict{UInt64, String}
-    ELF() = new(Ehdr(), [], [], [], Dict(), Dict())
+    strtab::Vector{UInt8}
+    shstrtab::Vector{UInt8}
+    ELF() = new(Ehdr(), [], [], [], [], [])
+end
+
+function get_str_from_uint8s(v::Vector{UInt8}, index)
+    @assert index <= size(v)[1] "index = $(index), size(v)[1] = $(size(v)[1])"
+    s = Vector{UInt8}([])
+    for i = index:size(v)[1]
+        if v[i] == 0x0
+            break
+        end
+        push!(s, v[i])
+    end
+
+    return String(UInt8.(s))
 end
 
 macro read_field(io, field)
@@ -206,24 +219,14 @@ end
 function read_strs(io::IOStream, offset::UInt64, size::UInt64)
     seek(io, offset)
 
-    ret = Dict{UInt64, String}(Dict())
     str = Vector{UInt8}([])
     for i in 1:size
         c = 0x0
         @read_field(io, c)
-        if c == 0x0
-            ret[i - 1] = String(UInt8.(str))
-            str = []
-        else
-            push!(str, c)
-        end
-
-        if i == size
-            @assert c == 0x00
-        end
+        push!(str, c)
     end
 
-    return ret
+    return str
 end
 
 function read_elf(io::IOStream)
@@ -261,6 +264,14 @@ function read_elf(io::IOStream)
 
     if elf.ehdr.e_shstrndx < size(elf.shdrs)[1]
         elf.shstrtab = read_strs(io, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_offset, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_size)
+    end
+
+    for s in elf.shdrs
+        str = get_str_from_uint8s(elf.shstrtab, s.sh_name + 1)
+        println(str)
+        if str == ".strtab"
+            elf.strtab = read_strs(io, s.sh_offset, s.sh_size)
+        end
     end
 
     return elf

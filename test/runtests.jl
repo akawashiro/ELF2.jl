@@ -14,6 +14,9 @@ function test_magic()
     @test elf.ehdr.e_type == ELF2.ET_DYN
 
     print(elf)
+    for s in elf.shdrs
+        println(s)
+    end
 
     close(f)
 end
