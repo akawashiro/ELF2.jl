@@ -115,7 +115,9 @@ mutable struct ELF
     phdrs::Vector{Phdr}
     shdrs::Vector{Shdr}
     dyns::Vector{Dyn}
-    ELF() = new(Ehdr(), [], [], [])
+    strtab::Dict{UInt64, String}
+    shstrtab::Dict{UInt64, String}
+    ELF() = new(Ehdr(), [], [], [], Dict(), Dict())
 end
 
 macro read_field(io, field)
@@ -201,6 +203,29 @@ function read_shdr(io::IOStream)
     return shdr
 end
 
+function read_strs(io::IOStream, offset::UInt64, size::UInt64)
+    seek(io, offset)
+
+    ret = Dict{UInt64, String}(Dict())
+    str = Vector{UInt8}([])
+    for i in 1:size
+        c = 0x0
+        @read_field(io, c)
+        if c == 0x0
+            ret[i - 1] = String(UInt8.(str))
+            str = []
+        else
+            push!(str, c)
+        end
+
+        if i == size
+            @assert c == 0x00
+        end
+    end
+
+    return ret
+end
+
 function read_elf(io::IOStream)
     elf = ELF()
 
@@ -232,6 +257,10 @@ function read_elf(io::IOStream)
                 end
             end
         end
+    end
+
+    if elf.ehdr.e_shstrndx < size(elf.shdrs)[1]
+        elf.shstrtab = read_strs(io, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_offset, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_size)
     end
 
     return elf
