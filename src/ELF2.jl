@@ -1,13 +1,20 @@
 module ELF2
 
-using PrettyPrint
-
 include("constants.jl")
 
 const EI_NIDENT = 16
 
 function hex(n)
     return string("0x", string(n, base=16))
+end
+
+macro read_field(io, field)
+    return :($(esc(field)) = read($(esc(io)), typeof($(esc(field)))))
+end
+
+# TODO: Use this macro
+macro read_field_from_io(field)
+    return :($(esc(field)) = read(io, typeof($(esc(field)))))
 end
 
 mutable struct Ehdr
@@ -36,9 +43,9 @@ mutable struct Ehdr
     Ehdr() = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 end
 
-function Base.show(io::IO, e::Ehdr)
+function ehdr_to_str(e::Ehdr)
     ret = """Ehdr(e_class=$(ELFCLASS[e.e_class]), e_data=$(ELFDATA[e.e_data]), e_fversion=$(ELFVERSION[e.e_fversion]), e_osabi=$(ELFOSABI[e.e_osabi]), e_abiversion=$(hex(e.e_abiversion)), e_type=$(ET_TYPES[e.e_type]), e_machine=$(EM_MACHINES[e.e_machine]), e_version=$(hex(e.e_version)), e_entry=$(hex(e.e_entry)), e_phoff=$(hex(e.e_phoff)), e_shoff=$(hex(e.e_shoff)), e_flags=$(hex(e.e_flags)), e_ehsize=$(hex(e.e_ehsize)), e_phentsize=$(hex(e.e_phentsize)), e_phnum=$(hex(e.e_phnum)), e_shentsize=$(hex(e.e_shentsize)), e_shnum=$(e.e_shnum), e_shstrndx=$(string(e.e_shstrndx)))"""
-    print(ret)
+    return ret
 end
 
 mutable struct Dyn
@@ -47,8 +54,8 @@ mutable struct Dyn
     Dyn() = new(0, 0)
 end
 
-function Base.show(io::IO, dyn::Dyn)
-    print("Dyn($(DYNAMIC_TYPE[dyn.d_tag]), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))")
+function dyn_to_str(dyn::Dyn)
+    return "Dyn($(DYNAMIC_TYPE[dyn.d_tag]), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))"
 end
 
 mutable struct Phdr
@@ -75,9 +82,9 @@ function show_PF(f::UInt32)
     return join(ret, "+")
 end
 
-function Base.show(io::IO, p::Phdr)
+function phdr_to_str(p::Phdr)
     ret = "Phdr(p_type=$(P_TYPE[p.p_type]), p_flags=$(show_PF(p.p_flags)), p_offset=$(hex(p.p_offset)), p_vaddr=$(hex(p.p_vaddr)), p_paddr=$(hex(p.p_paddr)), p_filesz=$(hex(p.p_filesz)), p_memsz=$(p.p_memsz), p_align=$(hex(p.p_align)))"
-    print(ret)
+    return ret
 end
 
 mutable struct Shdr
@@ -105,9 +112,35 @@ function show_SHF_FLAGS(f::UInt64)
     return join(ret, "+")
 end
 
-function Base.show(io::IO, s::Shdr)
-    ret = "Shdr(sh_name=$(hex(s.sh_name)), sh_type=$(SHT_TYPES[s.sh_type]), sh_flags=$(show_SHF_FLAGS(s.sh_flags)), sh_addr=$(hex(s.sh_addr)), sh_offset=$(hex(s.sh_offset)), sh_size=$(hex(s.sh_size)), sh_link=$(s.sh_link), sh_info=$(hex(s.sh_info)), sh_addralign=$(hex(s.sh_addralign)), sh_entsize=$(hex(s.sh_entsize)))"
-    print(ret)
+function shdr_to_str(s::Shdr, shstrtab::Vector{UInt8})
+    ret = "Shdr(sh_name=$(get_str_from_uint8s(shstrtab, s.sh_name + 1)), sh_type=$(SHT_TYPES[s.sh_type]), sh_flags=$(show_SHF_FLAGS(s.sh_flags)), sh_addr=$(hex(s.sh_addr)), sh_offset=$(hex(s.sh_offset)), sh_size=$(hex(s.sh_size)), sh_link=$(s.sh_link), sh_info=$(hex(s.sh_info)), sh_addralign=$(hex(s.sh_addralign)), sh_entsize=$(hex(s.sh_entsize)))"
+    return ret
+end
+
+mutable struct Sym
+    st_name::UInt32
+    st_info::UInt8
+    st_other::UInt8
+    st_shndx::UInt16
+    st_value::UInt64
+    st_size::UInt64
+    Sym() = new(0, 0, 0, 0, 0, 0)
+end
+
+function read_sym(io::IOStream)
+    sym = Sym()
+    @read_field(io, sym.st_name) 
+    @read_field(io, sym.st_info)
+    @read_field(io, sym.st_other)
+    @read_field(io, sym.st_shndx)
+    @read_field(io, sym.st_value)
+    @read_field(io, sym.st_size)
+    return sym 
+end
+
+function sym_to_str(s::Sym, strtab::Vector{UInt8})
+    ret = "Sym(st_name=$(get_str_from_uint8s(strtab, s.st_name+1)), st_info=$(hex(s.st_info)), st_other=$(s.st_other), sh_shndx=$(s.st_shndx), st_value=$(hex(s.st_value)), st_size=$(hex(s.st_size)))"
+    return ret
 end
 
 mutable struct ELF
@@ -115,6 +148,7 @@ mutable struct ELF
     phdrs::Vector{Phdr}
     shdrs::Vector{Shdr}
     dyns::Vector{Dyn}
+    syms::Vector{Sym}
     strtab::Vector{UInt8}
     shstrtab::Vector{UInt8}
     ELF() = new(Ehdr(), [], [], [], [], [])
@@ -131,15 +165,6 @@ function get_str_from_uint8s(v::Vector{UInt8}, index)
     end
 
     return String(UInt8.(s))
-end
-
-macro read_field(io, field)
-    return :($(esc(field)) = read($(esc(io)), typeof($(esc(field)))))
-end
-
-# TODO: Use this macro
-macro read_field_from_io(field)
-    return :($(esc(field)) = read(io, typeof($(esc(field)))))
 end
 
 function read_dyn(io::IOStream)
@@ -268,14 +293,50 @@ function read_elf(io::IOStream)
 
     for s in elf.shdrs
         str = get_str_from_uint8s(elf.shstrtab, s.sh_name + 1)
-        println(str)
         if str == ".strtab"
             elf.strtab = read_strs(io, s.sh_offset, s.sh_size)
+        elseif str == ".symtab"
+            seek(io, s.sh_offset)
+            for i = 1:Int64(s.sh_size/s.sh_entsize)
+                s = read_sym(io)
+                push!(elf.syms, s)
+            end
         end
     end
 
     return elf
 end
 
+function Base.show(io::IO, elf::ELF)
+    println("ELF(")
+
+    println(ehdr_to_str(elf.ehdr))
+
+    println("phdrs=[")
+    for p in elf.phdrs
+        println(phdr_to_str(p))
+    end
+    println("]")
+
+    println("shdrs=[")
+    for s in elf.shdrs
+        println(shdr_to_str(s, elf.shstrtab))
+    end
+    println("]")
+
+    println("dyns=[")
+    for d in elf.dyns
+        println(dyn_to_str(d))
+    end
+    println("]")
+
+    println("syms=[")
+    for s in elf.syms
+        println(sym_to_str(s, elf.strtab))
+    end
+    println("]")
+
+    println(")")
+end
 
 end

@@ -12,11 +12,8 @@ function test_magic()
     @test elf.ehdr.e_data == ELF2.ELFDATA2LSB
     @test elf.ehdr.e_fversion == ELF2.EV_CURRENT
     @test elf.ehdr.e_type == ELF2.ET_DYN
-
-    print(elf)
-    for s in elf.shdrs
-        println(s)
-    end
+    
+    show(elf)
 
     close(f)
 end
