@@ -627,3 +627,11 @@ end
     const DT_VERNEED = 0x6ffffffe# Address of table with needed
     const DT_VERNEEDNUM = 0x6fffffff# Number of needed versions */
 end
+
+@constants NOTE_TYPES "" begin
+    const NT_GNU_ABI_TAG = 1
+    const NT_GNU_HWCAP = 2
+    const NT_GNU_BUILD_ID = 3
+    const NT_GNU_GOLD_VERSION = 4
+    const NT_GNU_PROPERTY_TYPE_0 = 5
+end

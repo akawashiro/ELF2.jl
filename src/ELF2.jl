@@ -181,6 +181,38 @@ function rel_to_str(r::Rel)
     return ret
 end
 
+mutable struct Note
+    n_namesz::UInt32
+    n_descsz::UInt32
+    n_type::UInt32
+    name::Vector{UInt8}
+    desc::Vector{UInt8}
+    Note() = new(0, 0, 0, [], [])
+end
+
+function read_note(io::IOStream)
+    n = Note()
+    @read_field(io, n.n_namesz) 
+    @read_field(io, n.n_descsz)
+    @read_field(io, n.n_type)
+    for i = 1:n.n_namesz
+        c = 0x0
+        @read_field(io, c)
+        push!(n.name, c)
+    end
+    for i = 1:n.n_descsz
+        c = 0x0
+        @read_field(io, c)
+        push!(n.desc, c)
+    end
+    return n 
+end
+
+function note_to_str(n::Note)
+    ret = "Note(n_namesz=$(n.n_namesz), n_descsz=$(n.n_descsz), n_type=$(NOTE_TYPES[n.n_type]) name=$(get_str_from_uint8s(n.name, 1)))"
+    return ret
+end
+
 mutable struct ELF
     ehdr::Ehdr
     phdrs::Vector{Phdr}
@@ -193,7 +225,8 @@ mutable struct ELF
     dynstrtab::Vector{UInt8}
     strtab::Vector{UInt8}
     shstrtab::Vector{UInt8}
-    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [])
+    notes::Vector{Note}
+    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [])
 end
 
 function get_str_from_uint8s(v::Vector{UInt8}, index)
@@ -369,6 +402,13 @@ function read_elf(io::IOStream)
                 push!(elf.relas, r)
             end
         end
+
+
+        if sh.sh_type == SHT_NOTE
+            seek(io, sh.sh_offset)
+            n = read_note(io)
+            push!(elf.notes, n)
+        end
     end
 
     return elf
@@ -418,6 +458,12 @@ function Base.show(io::IO, elf::ELF)
     println("rels=[")
     for r in elf.rels
         println(rela_to_str(r))
+    end
+    println("]")
+
+    println("notes=[")
+    for n in elf.notes
+        println(note_to_str(n))
     end
     println("]")
 
