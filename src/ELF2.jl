@@ -143,15 +143,57 @@ function sym_to_str(s::Sym, strtab::Vector{UInt8})
     return ret
 end
 
+mutable struct Rela
+    r_offset::UInt64
+    r_info::UInt64
+    r_addend::Int64
+    Rela() = new(0, 0, 0)
+end
+
+function read_rela(io::IOStream)
+    r = Rela()
+    @read_field(io, r.r_offset) 
+    @read_field(io, r.r_info)
+    @read_field(io, r.r_addend)
+    return r 
+end
+
+function rela_to_str(r::Rela)
+    ret = "Rela(r_offset=$(hex(r.r_offset)), r_info=$(hex(r.r_info)), r_addend=$(r.r_addend))"
+    return ret
+end
+
+mutable struct Rel
+    r_offset::UInt64
+    r_info::UInt64
+    Rel() = new(0, 0)
+end
+
+function read_rel(io::IOStream)
+    r = Rel()
+    @read_field(io, r.r_offset) 
+    @read_field(io, r.r_info)
+    return r 
+end
+
+function rel_to_str(r::Rel)
+    ret = "Rel(r_offset=$(hex(r.r_offset)), r_info=$(hex(r.r_info)))"
+    return ret
+end
+
 mutable struct ELF
     ehdr::Ehdr
     phdrs::Vector{Phdr}
     shdrs::Vector{Shdr}
     dyns::Vector{Dyn}
     syms::Vector{Sym}
+    dynsyms::Vector{Sym}
+    rels::Vector{Rel}
+    relas::Vector{Rela}
+    dynstrtab::Vector{UInt8}
     strtab::Vector{UInt8}
     shstrtab::Vector{UInt8}
-    ELF() = new(Ehdr(), [], [], [], [], [])
+    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [])
 end
 
 function get_str_from_uint8s(v::Vector{UInt8}, index)
@@ -291,15 +333,40 @@ function read_elf(io::IOStream)
         elf.shstrtab = read_strs(io, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_offset, elf.shdrs[elf.ehdr.e_shstrndx + 1].sh_size)
     end
 
-    for s in elf.shdrs
-        str = get_str_from_uint8s(elf.shstrtab, s.sh_name + 1)
+    for sh in elf.shdrs
+        str = get_str_from_uint8s(elf.shstrtab, sh.sh_name + 1)
         if str == ".strtab"
-            elf.strtab = read_strs(io, s.sh_offset, s.sh_size)
+            elf.strtab = read_strs(io, sh.sh_offset, sh.sh_size)
+        elseif str == ".dynstr"
+            elf.dynstrtab = read_strs(io, sh.sh_offset, sh.sh_size)
         elseif str == ".symtab"
-            seek(io, s.sh_offset)
-            for i = 1:Int64(s.sh_size/s.sh_entsize)
+            seek(io, sh.sh_offset)
+            for i = 1:Int64(sh.sh_size/sh.sh_entsize)
                 s = read_sym(io)
                 push!(elf.syms, s)
+            end
+        elseif str == ".dynsym"
+            seek(io, sh.sh_offset)
+            for i = 1:Int64(sh.sh_size/sh.sh_entsize)
+                s = read_sym(io)
+                push!(elf.dynsyms, s)
+            end
+        end
+
+        if sh.sh_type == SHT_RELA
+            seek(io, sh.sh_offset)
+            for i = 1:Int64(sh.sh_size/sh.sh_entsize)
+                r = read_rela(io)
+                push!(elf.relas, r)
+            end
+        end
+
+
+        if sh.sh_type == SHT_REL
+            seek(io, sh.sh_offset)
+            for i = 1:Int64(sh.sh_size/sh.sh_entsize)
+                r = read_rel(io)
+                push!(elf.relas, r)
             end
         end
     end
@@ -333,6 +400,24 @@ function Base.show(io::IO, elf::ELF)
     println("syms=[")
     for s in elf.syms
         println(sym_to_str(s, elf.strtab))
+    end
+    println("]")
+
+    println("dynsyms=[")
+    for s in elf.dynsyms
+        println(sym_to_str(s, elf.dynstrtab))
+    end
+    println("]")
+
+    println("relas=[")
+    for r in elf.relas
+        println(rela_to_str(r))
+    end
+    println("]")
+
+    println("rels=[")
+    for r in elf.rels
+        println(rela_to_str(r))
     end
     println("]")
 
