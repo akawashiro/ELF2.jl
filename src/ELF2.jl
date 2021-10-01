@@ -208,8 +208,106 @@ function read_note(io::IOStream)
     return n 
 end
 
+function read_uint32(bytes::Vector{UInt8}, index::Int)
+    @assert (1 <= index && index + 3 <= size(bytes)[1]) "index=$(index), size(bytes)[1]=$(size(bytes)[1])"
+
+    r=UInt32(0)
+    for i = index+3:-1:index
+        r = r << 8
+        r += bytes[i]
+    end
+    return r
+end
+
+function read_uint64(bytes::Vector{UInt8}, index::Int)
+    @assert (1 <= index && index + 3 <= size(bytes)[1]) "index=$(index), size(bytes)[1]=$(size(bytes)[1])"
+
+    r=UInt64(0)
+    for i = index+7:-1:index
+        r = r << 8
+        r += bytes[i]
+    end
+    return r
+end
+
+function X86_ISA_to_str(d::UInt32)
+    ret = ""
+
+    while d != 0
+        bit = d & (-d)
+        d = d - bit
+
+        if ret == ""
+            ret = ret * ", "
+        end
+        ret = ret * X86_ISA_to_str[bit]
+    end
+
+    return ret
+end
+
+function X86_FEATURE_1_to_str(d::UInt32)
+    ret = ""
+
+    for k = keys(GNU_PROPERTY_X86_FEATURE_1)
+        if k & d != 0
+            if ret != ""
+                ret = ret * ", "
+            end
+            ret = ret * GNU_PROPERTY_X86_FEATURE_1[k]
+        end
+    end
+
+    return ret
+end
+
+function gnu_property_to_str(desc::Vector{UInt8})
+    @assert size(desc)[1] >= 8
+
+    type=read_uint32(desc, 1)
+    datasz=read_uint32(desc, 5)
+
+    if GNU_PROPERTY_LOPROC <= type && type <= GNU_PROPERTY_HIPROC
+        @assert type == GNU_PROPERTY_X86_ISA_1_USED || type == GNU_PROPERTY_X86_ISA_1_NEEDED || type == GNU_PROPERTY_X86_FEATURE_1_AND
+        @assert datasz == 4
+
+        if type == GNU_PROPERTY_X86_ISA_1_USED
+            isa_used = read_uint32(desc, 9)
+            return "x86 ISA used: " * X86_ISA_to_str(isa_used)
+        elseif type == GNU_PROPERTY_X86_ISA_1_NEEDED
+            isa_needed = read_uint32(desc, 9)
+            return "x86 ISA needed: " * X86_ISA_to_str(isa_needed)
+        elseif type == GNU_PROPERTY_X86_FEATURE_1_AND
+            features = read_uint32(desc, 9)
+            return "x86 feature: " * X86_FEATURE_1_to_str(features)
+        end
+    elseif type == GNU_PROPERTY_STACK_SIZE
+        @assert datasz == 8
+        stack_size = read_uint32(desc, 9)
+        return "stack size: $(stack_size)"
+    elseif type == GNU_PROPERTY_NO_COPY_ON_PROTECTED
+        @assert datasz == 0
+        return "no copy on protected"
+    else
+        @assert false "type=$(type) is not supported yet"
+    end
+
+    return ""
+end
+
 function note_to_str(n::Note)
-    ret = "Note(n_namesz=$(n.n_namesz), n_descsz=$(n.n_descsz), n_type=$(NOTE_TYPES[n.n_type]) name=$(get_str_from_uint8s(n.name, 1)))"
+    # TODO: show desc
+    ret = "Note(n_namesz=$(n.n_namesz), n_descsz=$(n.n_descsz), n_type=$(NOTE_TYPES[n.n_type]) name=$(get_str_from_uint8s(n.name, 1)), desc="
+
+    if n.n_type == NT_GNU_BUILD_ID
+        for d in n.desc
+            ret = ret * string(d, base=16)
+        end
+    else
+        ret = ret * gnu_property_to_str(n.desc)
+    end
+
+    ret = ret * ")"
     return ret
 end
 
