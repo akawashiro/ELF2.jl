@@ -1,11 +1,11 @@
 # ELF2
 
 ## TODO
+- version
 - symbol
     - lto
 - demangle
 - section group
-- note
-- version
 - decompress
 - debug-dump
+- note

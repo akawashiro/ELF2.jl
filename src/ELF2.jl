@@ -55,7 +55,7 @@ mutable struct Dyn
 end
 
 function dyn_to_str(dyn::Dyn)
-    return "Dyn($(DYNAMIC_TYPE[dyn.d_tag]), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, 16)))"
+    return "Dyn($(DYNAMIC_TYPE[dyn.d_tag]), d_val_or_ptr=0x$(string(dyn.d_val_or_ptr, base=16)))"
 end
 
 mutable struct Phdr
