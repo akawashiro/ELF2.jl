@@ -181,6 +181,66 @@ function rel_to_str(r::Rel)
     return ret
 end
 
+mutable struct Verdaux
+    vda_name::UInt32
+    vda_next::UInt32
+    Verdaux() = new(0, 0)
+end
+
+
+function read_verdaux(io::IOStream)
+    a = Verdaux()
+    @read_field(io, a.vda_name)
+    @read_field(io, a.vda_next)
+    return a
+end
+
+function verdaux_to_str(a::Verdaux, strtab::Vector{UInt8})
+    ret = "Verdaux(vda_name=$(get_str_from_uint8s(strtab, a.vda_name)), vda_next=$(a.vda_next))"
+    return ret
+end
+
+mutable struct Verdef
+    vd_version::UInt16
+    vd_flags::UInt16
+    vd_ndx::UInt16
+    vd_cnt::UInt16
+    vd_hash::UInt32
+    vd_aux::UInt32
+    vd_next::UInt32
+    verdauxs::Vector{Verdaux}
+    Verdef() = new(0, 0, 0, 0, 0, 0, 0, [])
+end
+
+function read_verdef(io::IOStream)
+    d = Verdef()
+    @read_field(io, d.vd_version)
+    @read_field(io, d.vd_flags)
+    @read_field(io, d.vd_ndx)
+    @read_field(io, d.vd_cnt)
+    @read_field(io, d.vd_hash)
+    @read_field(io, d.vd_aux)
+    @read_field(io, d.vd_next)
+    return d
+end
+
+function read_all_verdefs(io::IOStream)
+end
+
+function verdef_to_str(d::Verdef, strtab::Vector{UInt8})
+    auxs_str = "["
+    for (i, a) in enumerate(d.verdauxs)
+        if i != 1
+            auxs_str = auxs_str * ", "
+        end
+        auxs_str = auxs_str * verdaux_to_str(a, strtab)
+    end
+    auxs_str = auxs_str * "]"
+
+    ret = "Verdef(vd_version=$(VER_DEF[d.vd_version]), vd_flags=$(VER_FLG[d.vd_flags]), vd_ndx=$(d.vd_ndx), vd_cnt=$(d.vd_cnt), vd_hash=$(d.vd_hash), vd_aux=$(d.vd_aux), vd_next=$(d.vd_next) verdauxs=$(auxs_str))"
+    return ret
+end
+
 mutable struct Note
     n_namesz::UInt32
     n_descsz::UInt32
@@ -291,12 +351,16 @@ function gnu_property_to_str(desc::Vector{UInt8})
     else
         @assert false "type=$(type) is not supported yet"
     end
+end
 
-    return ""
+function ABI_TAG_to_str(desc::Vector{UInt8})
+    @assert size(desc)[1] == 4 * 4 "size(desc)[1] = $(size(desc)[1])"
+
+    ret = ELF_NOTE_OS[read_uint32(desc, 1)] * " " * string(read_uint32(desc, 5)) * "." * string(read_uint32(desc, 9)) * "." * string(read_uint32(desc, 13))
+    return ret
 end
 
 function note_to_str(n::Note)
-    # TODO: show desc
     ret = "Note(n_namesz=$(n.n_namesz), n_descsz=$(n.n_descsz), n_type=$(NOTE_TYPES[n.n_type]) name=$(get_str_from_uint8s(n.name, 1)), desc="
 
     if n.n_type == NT_GNU_BUILD_ID
@@ -305,6 +369,8 @@ function note_to_str(n::Note)
         end
     elseif n.n_type == NT_GNU_PROPERTY_TYPE_0
         ret = ret * gnu_property_to_str(n.desc)
+    elseif n.n_type == NT_GNU_ABI_TAG
+        ret = ret * ABI_TAG_to_str(n.desc)
     else
         @assert false "n_type=$(n.n_type) is not supported yet"
     end
@@ -326,7 +392,9 @@ mutable struct ELF
     strtab::Vector{UInt8}
     shstrtab::Vector{UInt8}
     notes::Vector{Note}
-    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [])
+    versyms::Vector{UInt16}
+    verdefs::Vector{Verdef}
+    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [], [], [])
 end
 
 function get_str_from_uint8s(v::Vector{UInt8}, index)
@@ -509,6 +577,15 @@ function read_elf(io::IOStream)
             n = read_note(io)
             push!(elf.notes, n)
         end
+
+        if sh.sh_type == SHT_GNU_versym
+            seek(io, sh.sh_offset)
+            for i = 1:Int64(sh.sh_size/sh.sh_entsize)
+                v = UInt16(0)
+                @read_field(io, v)
+                push!(elf.versyms, v)
+            end
+        end
     end
 
     return elf
@@ -564,6 +641,28 @@ function Base.show(io::IO, elf::ELF)
     println("notes=[")
     for n in elf.notes
         println(note_to_str(n))
+    end
+    println("]")
+
+    print("versyms=[")
+    for (i, v) in enumerate(elf.versyms)
+        if i != 1
+            print(", ")
+        end
+        if haskey(VER_NDX, v)
+            print(VER_NDX[v])
+        else
+            print(v)
+        end
+    end
+    println("]")
+
+    println("verdefs=[")
+    for (i, v) in enumerate(elf.verdefs)
+        if i != 1
+            print(", ")
+        end
+        println(verdef_to_str(v, elf.strtab))
     end
     println("]")
 

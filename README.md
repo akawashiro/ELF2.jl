@@ -9,3 +9,7 @@
 - decompress
 - debug-dump
 - note
+- Exhaustive test
+    - /bin
+    - /lib
+    - demangle

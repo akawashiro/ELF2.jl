@@ -669,3 +669,27 @@ const GNU_PROPERTY_X86_ISA_1_to_str = Dict(GNU_PROPERTY_X86_ISA_1_BASELINE=>"CMO
     const GNU_PROPERTY_X86_FEATURE_1_IBT = UInt32(1)
     const GNU_PROPERTY_X86_FEATURE_1_SHSTK = UInt32(2)
 end
+
+@constants ELF_NOTE_OS "ELF_NOTE_OS_" begin
+    const ELF_NOTE_OS_LINUX =	0
+    const ELF_NOTE_OS_GNU = 1
+    const ELF_NOTE_OS_SOLARIS2 = 2
+    const ELF_NOTE_OS_FREEBSD = 3
+end
+
+@constants VER_NDX "VER_NDX_" begin
+	const VER_NDX_LOCAL = 0x0000
+	const VER_NDX_GLOBAL = 0x0001
+	const VER_NDX_ELIMINATE= 0xff01
+end
+
+@constants VER_DEF "VER_DEF_" begin
+    const VER_DEF_NONE = 0
+    const VER_DEF_CURRENT = 1
+    const VER_DEF_NUM = 2
+end
+
+@constants VER_FLG "VER_FLG_" begin
+    const VER_FLG_BASE = 0x1
+    const VER_FLG_WEAK = 0x2
+end
