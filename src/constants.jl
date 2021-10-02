@@ -287,6 +287,14 @@ end
     const SHT_GROUP = 17
     const SHT_SYMTAB_SHNDX = 18
     const SHT_GNU_HASH = 0x6ffffff6
+    const SHT_GNU_LIBLIST = 0x6ffffff7
+    const SHT_CHECKSUM = 0x6ffffff8
+    const SHT_SUNW_move	= 0x6ffffffa
+    const SHT_SUNW_COMDAT = 0x6ffffffb
+    const SHT_SUNW_syminfo = 0x6ffffffc
+    const SHT_GNU_verdef = 0x6ffffffd
+    const SHT_GNU_verneed = 0x6ffffffe
+    const SHT_GNU_versym = 0x6fffffff
 end
 
 @constants SHT_MASKS "" begin

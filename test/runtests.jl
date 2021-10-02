@@ -1,6 +1,21 @@
 using ELF2
 using Test
 
+function execute(cmd::Cmd)
+  out = Pipe()
+  err = Pipe()
+
+  process = run(pipeline(ignorestatus(cmd), stdout=out, stderr=err))
+  close(out.in)
+  close(err.in)
+
+  (
+    stdout = String(read(out)), 
+    stderr = String(read(err)),  
+    code = process.exitcode
+  )
+end
+
 function check_command(command::String)
     which = `which $(command)`
     println(which)
@@ -11,6 +26,17 @@ function check_command(command::String)
         return false
     end
     return true
+end
+
+function test_command_itself(command::String)
+    if !check_command(command)
+        return
+    end
+
+    path, _, _ = execute(`which $(command)`)
+    f = open(path, "r")
+    elf = ELF2.read_elf(f)
+    show(elf)
 end
 
 function test_gcc()
@@ -110,4 +136,8 @@ end
     test_gcc_cxx()
     test_gcc_cxx_aarch64()
     test_clang_cxx()
+    test_command_itself("gcc")
+    test_command_itself("g++")
+    test_command_itself("clang")
+    test_command_itself("clang++")
 end

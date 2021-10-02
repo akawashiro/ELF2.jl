@@ -237,10 +237,10 @@ function X86_ISA_to_str(d::UInt32)
         bit = d & (-d)
         d = d - bit
 
-        if ret == ""
+        if ret != ""
             ret = ret * ", "
         end
-        ret = ret * X86_ISA_to_str[bit]
+        ret = ret * GNU_PROPERTY_X86_ISA_1_to_str[bit]
     end
 
     return ret
@@ -303,8 +303,10 @@ function note_to_str(n::Note)
         for d in n.desc
             ret = ret * string(d, base=16)
         end
-    else
+    elseif n.n_type == NT_GNU_PROPERTY_TYPE_0
         ret = ret * gnu_property_to_str(n.desc)
+    else
+        @assert false "n_type=$(n.n_type) is not supported yet"
     end
 
     ret = ret * ")"
