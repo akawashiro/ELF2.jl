@@ -693,3 +693,13 @@ end
     const VER_FLG_BASE = 0x1
     const VER_FLG_WEAK = 0x2
 end
+
+@constants VER_NEED "VER_NEED_" begin
+    const VER_NEED_NONE = 0
+    const VER_NEED_CURRENT = 1
+    const VER_NEED_NUM = 2
+end
+
+@constants VER_FLG "VER_FLG_" begin
+    const VER_FLG_WEAK = 0x2
+end

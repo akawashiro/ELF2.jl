@@ -241,6 +241,71 @@ function verdef_to_str(d::Verdef, strtab::Vector{UInt8})
     return ret
 end
 
+Elf64_Half = UInt16
+Elf64_Word = UInt32
+Elf64_SWord = Int32
+Elf64_Xword = UInt64
+Elf64_SxWord = Int64
+Elf64_Addr = UInt64
+Elf64_Off = UInt64
+Elf64_Section = UInt16
+Elf64_Versym = Elf64_Half
+
+mutable struct Vernaux
+    vna_hash::Elf64_Word
+    vna_flags::Elf64_Half
+    vna_other::Elf64_Half
+    vna_name::Elf64_Word
+    vna_next::Elf64_Word
+    Vernaux() = new(0, 0, 0, 0, 0)
+end
+
+function read_vernaux(io::IOStream)
+    a = Vernaux()
+    @read_field(io, a.vna_hash)
+    @read_field(io, a.vna_flags)
+    @read_field(io, a.vna_other)
+    @read_field(io, a.vna_name)
+    @read_field(io, a.vna_next)
+    return a
+end
+
+function vernaux_to_str(a::Vernaux, strtab::Vector{UInt8})
+    # ret = "Vernaux(vna_hash=$(hex(a.vna_hash)), vna_flags=$(VER_FLG[a.vna_flags]), vna_other=$(a.vna_other), vna_name=$(get_str_from_uint8s(strtab, a.vna_name)), vna_next=$(hex(a.vna_next)))"
+    ret = "Vernaux(vna_hash=$(hex(a.vna_hash)), vna_flags=$(hex(a.vna_flags)), vna_other=$(a.vna_other), vna_name=$(get_str_from_uint8s(strtab, a.vna_name)), vna_next=$(hex(a.vna_next)))"
+    return ret
+end
+
+mutable struct Verneed
+    vn_version::Elf64_Half
+    vn_cnt::Elf64_Half
+    vn_file::Elf64_Word
+    vn_aux::Elf64_Word
+    vn_next::Elf64_Word
+    vernauxs::Vector{Vernaux}
+    Verneed() = new(0, 0, 0, 0, 0, [])
+end
+
+function read_verneed(io::IOStream)
+    n = Verneed()
+    @read_field(io, n.vn_version)
+    @read_field(io, n.vn_cnt)
+    @read_field(io, n.vn_file)
+    @read_field(io, n.vn_aux)
+    @read_field(io, n.vn_next)
+    return n
+end
+
+function verneed_to_str(n::Verneed, strtab::Vector{UInt8})
+    ret = "Verneed(vn_version=$(VER_NEED[n.vn_version]), vn_cnt=$(n.vn_cnt), vn_file=$(get_str_from_uint8s(strtab, n.vn_file)), vn_aux=$(hex(n.vn_aux)), vn_next=$(hex(n.vn_next))\nvernauxs=["
+    for a in n.vernauxs
+        ret = ret * vernaux_to_str(a, strtab)
+    end
+    ret = ret * "]"
+
+    return ret
+end
+
 mutable struct Note
     n_namesz::UInt32
     n_descsz::UInt32
@@ -394,7 +459,8 @@ mutable struct ELF
     notes::Vector{Note}
     versyms::Vector{UInt16}
     verdefs::Vector{Verdef}
-    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [], [], [])
+    verneeds::Vector{Verneed}
+    ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 end
 
 function get_str_from_uint8s(v::Vector{UInt8}, index)
@@ -586,6 +652,24 @@ function read_elf(io::IOStream)
                 push!(elf.versyms, v)
             end
         end
+
+        if sh.sh_type == SHT_GNU_verneed
+            off = sh.sh_offset
+            while true
+                seek(io, sh.sh_offset)
+                n = read_verneed(io)
+                for _ in 1:n.vn_cnt
+                    a = read_vernaux(io)
+                    push!(n.vernauxs, a)
+                end
+
+                push!(elf.verneeds, n)
+                if n.vn_next == 0
+                    break
+                end
+                off = off + n.vn_next
+            end
+        end
     end
 
     return elf
@@ -663,6 +747,15 @@ function Base.show(io::IO, elf::ELF)
             print(", ")
         end
         println(verdef_to_str(v, elf.strtab))
+    end
+    println("]")
+
+    println("verneeds=[")
+    for (i, n::Verneed) in enumerate(elf.verneeds)
+        if i != 1
+            print(", ")
+        end
+        println(verneed_to_str(n, elf.strtab))
     end
     println("]")
 
