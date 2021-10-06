@@ -6,6 +6,7 @@
 - section group
 - decompress
 - debug-dump
+- CI
 - Exhaustive test
     - /bin
     - /lib
