@@ -57,7 +57,7 @@ function test_cxx(command::String)
         return
     end
 
-    cmd = `$(command) main.c -o main.$(command).out`
+    cmd = `$(command) main.cc -o main.$(command).out`
     run(cmd)
     f = open("main.$(command).out", "r")
     elf = ELF2.read_elf(f)
