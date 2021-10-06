@@ -1,6 +1,7 @@
 module ELF2
 
 include("constants.jl")
+include("demangle.jl")
 
 const EI_NIDENT = 16
 
@@ -16,6 +17,16 @@ end
 macro read_field_from_io(field)
     return :($(esc(field)) = read(io, typeof($(esc(field)))))
 end
+
+Elf64_Half = UInt16
+Elf64_Word = UInt32
+Elf64_SWord = Int32
+Elf64_Xword = UInt64
+Elf64_SxWord = Int64
+Elf64_Addr = UInt64
+Elf64_Off = UInt64
+Elf64_Section = UInt16
+Elf64_Versym = Elf64_Half
 
 mutable struct Ehdr
     e_ident1::UInt8
@@ -196,7 +207,7 @@ function read_verdaux(io::IOStream)
 end
 
 function verdaux_to_str(a::Verdaux, strtab::Vector{UInt8})
-    ret = "Verdaux(vda_name=$(get_str_from_uint8s(strtab, a.vda_name)), vda_next=$(a.vda_next))"
+    ret = "Verdaux(vda_name=$(get_str_from_uint8s(strtab, a.vda_name + 1)), vda_next=$(a.vda_next))"
     return ret
 end
 
@@ -224,9 +235,6 @@ function read_verdef(io::IOStream)
     return d
 end
 
-function read_all_verdefs(io::IOStream)
-end
-
 function verdef_to_str(d::Verdef, strtab::Vector{UInt8})
     auxs_str = "["
     for (i, a) in enumerate(d.verdauxs)
@@ -240,16 +248,6 @@ function verdef_to_str(d::Verdef, strtab::Vector{UInt8})
     ret = "Verdef(vd_version=$(VER_DEF[d.vd_version]), vd_flags=$(VER_FLG[d.vd_flags]), vd_ndx=$(d.vd_ndx), vd_cnt=$(d.vd_cnt), vd_hash=$(d.vd_hash), vd_aux=$(d.vd_aux), vd_next=$(d.vd_next) verdauxs=$(auxs_str))"
     return ret
 end
-
-Elf64_Half = UInt16
-Elf64_Word = UInt32
-Elf64_SWord = Int32
-Elf64_Xword = UInt64
-Elf64_SxWord = Int64
-Elf64_Addr = UInt64
-Elf64_Off = UInt64
-Elf64_Section = UInt16
-Elf64_Versym = Elf64_Half
 
 mutable struct Vernaux
     vna_hash::Elf64_Word
@@ -270,9 +268,18 @@ function read_vernaux(io::IOStream)
     return a
 end
 
+function vna_flags_to_str(f::Elf64_Half)
+    if f == VER_FLG_WEAK
+        return "WEAK"
+    elseif f == 0
+        return ""
+    else
+        @assert false "Illegitimate value as vna_flags: $(hex(f))"
+    end
+end
+
 function vernaux_to_str(a::Vernaux, strtab::Vector{UInt8})
-    # ret = "Vernaux(vna_hash=$(hex(a.vna_hash)), vna_flags=$(VER_FLG[a.vna_flags]), vna_other=$(a.vna_other), vna_name=$(get_str_from_uint8s(strtab, a.vna_name)), vna_next=$(hex(a.vna_next)))"
-    ret = "Vernaux(vna_hash=$(hex(a.vna_hash)), vna_flags=$(hex(a.vna_flags)), vna_other=$(a.vna_other), vna_name=$(get_str_from_uint8s(strtab, a.vna_name)), vna_next=$(hex(a.vna_next)))"
+    ret = "Vernaux(vna_hash=$(hex(a.vna_hash)), vna_flags=$(vna_flags_to_str(a.vna_flags)), vna_other=$(a.vna_other), vna_name=$(get_str_from_uint8s(strtab, a.vna_name + 1)), vna_next=$(hex(a.vna_next)))"
     return ret
 end
 
@@ -297,11 +304,11 @@ function read_verneed(io::IOStream)
 end
 
 function verneed_to_str(n::Verneed, strtab::Vector{UInt8})
-    ret = "Verneed(vn_version=$(VER_NEED[n.vn_version]), vn_cnt=$(n.vn_cnt), vn_file=$(get_str_from_uint8s(strtab, n.vn_file)), vn_aux=$(hex(n.vn_aux)), vn_next=$(hex(n.vn_next))\nvernauxs=["
+    ret = "Verneed(vn_version=$(VER_NEED[n.vn_version]), vn_cnt=$(n.vn_cnt), vn_file=$(hex(n.vn_file)), $(get_str_from_uint8s(strtab, n.vn_file + 1)), vn_aux=$(hex(n.vn_aux)), vn_next=$(hex(n.vn_next))\nvernauxs=[\n"
     for a in n.vernauxs
-        ret = ret * vernaux_to_str(a, strtab)
+        ret = ret * vernaux_to_str(a, strtab) * "\n"
     end
-    ret = ret * "]"
+    ret = ret * "])"
 
     return ret
 end
@@ -656,7 +663,7 @@ function read_elf(io::IOStream)
         if sh.sh_type == SHT_GNU_verneed
             off = sh.sh_offset
             while true
-                seek(io, sh.sh_offset)
+                seek(io, off)
                 n = read_verneed(io)
                 for _ in 1:n.vn_cnt
                     a = read_vernaux(io)
@@ -664,10 +671,30 @@ function read_elf(io::IOStream)
                 end
 
                 push!(elf.verneeds, n)
+                println("n.vn_next = ", n.vn_next)
                 if n.vn_next == 0
                     break
                 end
                 off = off + n.vn_next
+            end
+        end
+
+        if sh.sh_type == SHT_GNU_verdef
+            off = sh.sh_offset
+            while true
+                seek(io, off)
+                d = read_verdef(io)
+                for _ in 1:d.vd_cnt
+                    a = read_verdaux(io)
+                    push!(n.verdauxs, a)
+                end
+
+                push!(elf.verdefs, d)
+                println("n.vn_next = ", d.vd_next)
+                if n.vd_next == 0
+                    break
+                end
+                off = off + d.vd_next
             end
         end
     end
@@ -752,10 +779,10 @@ function Base.show(io::IO, elf::ELF)
 
     println("verneeds=[")
     for (i, n::Verneed) in enumerate(elf.verneeds)
-        if i != 1
-            print(", ")
+        print(verneed_to_str(n, elf.dynstrtab))
+        if i != size(elf.verneeds)[1]
+            println(", ")
         end
-        println(verneed_to_str(n, elf.strtab))
     end
     println("]")
 

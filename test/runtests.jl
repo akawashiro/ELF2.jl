@@ -40,74 +40,26 @@ function test_command_itself(command::String)
     show(elf)
 end
 
-function test_gcc()
-    if !check_command("gcc")
+function test_cc(command::String)
+    if !check_command(command)
         return
     end
 
-    cmd = `gcc main.c -o main.gcc.out`
+    cmd = `$(command) main.c -o main.$(command).out`
     run(cmd)
-    f = open("main.gcc.out", "r")
+    f = open("main.$(command).out", "r")
     elf = ELF2.read_elf(f)
     show(elf)
 end
 
-function test_gcc_aarch64()
-    if !check_command("aarch64-linux-gnu-gcc")
+function test_cxx(command::String)
+    if !check_command(command)
         return
     end
 
-    cmd = `aarch64-linux-gnu-gcc main.c -o main.gcc.aarch64.out`
+    cmd = `$(command) main.c -o main.$(command).out`
     run(cmd)
-    f = open("main.gcc.out", "r")
-    elf = ELF2.read_elf(f)
-    show(elf)
-end
-
-function test_clang()
-    if !check_command("clang")
-        return
-    end
-
-    cmd = `clang main.c -o main.clang.out`
-    run(cmd)
-    f = open("main.clang.out", "r")
-    elf = ELF2.read_elf(f)
-    show(elf)
-end
-
-function test_gcc_cxx()
-    if !check_command("g++")
-        return
-    end
-
-    cmd = `g++ main.cc -o main.g++.out`
-    run(cmd)
-    f = open("main.g++.out", "r")
-    elf = ELF2.read_elf(f)
-    show(elf)
-end
-
-function test_gcc_cxx_aarch64()
-    if !check_command("aarch64-linux-gnu-g++")
-        return
-    end
-
-    cmd = `aarch64-linux-gnu-g++ main.cc -o main.g++.aarch64.out`
-    run(cmd)
-    f = open("main.g++.aarch64.out", "r")
-    elf = ELF2.read_elf(f)
-    show(elf)
-end
-
-function test_clang_cxx()
-    if !check_command("clang++")
-        return
-    end
-
-    cmd = `clang++ main.c -o main.clang++.out`
-    run(cmd)
-    f = open("main.clang++.out", "r")
+    f = open("main.$(command).out", "r")
     elf = ELF2.read_elf(f)
     show(elf)
 end
@@ -129,16 +81,28 @@ function test_magic()
     close(f)
 end
 
+function test_demangle()
+    @test ELF2.demangle("_Z41__static_initialization_and_destruction_0ii") == "__static_initialization_and_destruction_0"
+    @test ELF2.demangle("_ZNSolsEPFRSoS_E") == "std::basic_ostream<char, std::char_traits<char> >::operator<<(std::basic_ostream<char, std::char_traits<char> >& (*)(std::basic_ostream<char, std::char_traits<char> >&))"
+    @test ELF2.demangle("_ZNSt8ios_base4InitC1Ev") == "std::ios_base::Init::Init()"
+    @test ELF2.demangle("_ZNSt8ios_base4InitD1Ev") == "std::ios_base::Init::~Init()"
+    @test ELF2.demangle("_ZSt4cout") == "_ZSt4cout"
+    @test ELF2.demangle("_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_") == "_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_"
+    @test ELF2.demangle("_ZStL8__ioinit") == "_ZStL8__ioinit"
+    @test ELF2.demangle("_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc") == "_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc"
+end
+
 @testset "ELF2.jl" begin
-    # test_magic()
-    test_gcc()
-    # test_gcc_aarch64()
-    # test_clang()
-    # test_gcc_cxx()
-    # test_gcc_cxx_aarch64()
-    # test_clang_cxx()
-    # test_command_itself("gcc")
-    # test_command_itself("g++")
-    # test_command_itself("clang")
-    # test_command_itself("clang++")
+    test_magic()
+    test_cc("gcc")
+    test_cc("aarch64-linux-gnu-gcc")
+    test_cc("clang")
+    test_cxx("g++")
+    test_cxx("aarch64-linux-gnu-g++")
+    test_cxx("clang++")
+    test_command_itself("gcc")
+    test_command_itself("g++")
+    test_command_itself("clang")
+    test_command_itself("clang++")
+    # test_demangle()
 end

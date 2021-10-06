@@ -1,15 +1,16 @@
 # ELF2
 
 ## TODO
-- version
-- symbol
-    - lto
 - demangle
+- 32bits
 - section group
 - decompress
 - debug-dump
-- note
 - Exhaustive test
     - /bin
     - /lib
     - demangle
+- version
+- symbol
+    - lto
+- note

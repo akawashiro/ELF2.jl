@@ -699,7 +699,3 @@ end
     const VER_NEED_CURRENT = 1
     const VER_NEED_NUM = 2
 end
-
-@constants VER_FLG "VER_FLG_" begin
-    const VER_FLG_WEAK = 0x2
-end
