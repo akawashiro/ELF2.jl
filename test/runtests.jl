@@ -94,12 +94,12 @@ end
 
 @testset "ELF2.jl" begin
     test_magic()
-    test_cc("gcc")
-    test_cc("aarch64-linux-gnu-gcc")
-    test_cc("clang")
-    test_cxx("g++")
-    test_cxx("aarch64-linux-gnu-g++")
-    test_cxx("clang++")
+    for cc in ["gcc", "aarch64-linux-gnu-gcc", "clang"]
+        test_cc(cc)
+    end
+    for cxx in ["g++", "aarch64-linux-gnu-g++", "clang++"]
+        test_cxx(cxx)
+    end
     test_command_itself("gcc")
     test_command_itself("g++")
     test_command_itself("clang")

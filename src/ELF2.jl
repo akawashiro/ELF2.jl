@@ -443,6 +443,8 @@ function note_to_str(n::Note)
         ret = ret * gnu_property_to_str(n.desc)
     elseif n.n_type == NT_GNU_ABI_TAG
         ret = ret * ABI_TAG_to_str(n.desc)
+    elseif n.n_type == NT_GNU_GOLD_VERSION
+        ret = ret * get_str_from_uint8s(n.desc, 1)
     else
         @assert false "n_type=$(n.n_type) is not supported yet"
     end
