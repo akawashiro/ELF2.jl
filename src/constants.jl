@@ -295,6 +295,7 @@ end
     const SHT_GNU_verdef = 0x6ffffffd
     const SHT_GNU_verneed = 0x6ffffffe
     const SHT_GNU_versym = 0x6fffffff
+    const SHT_X86_64_UNWIND = 0x70000001
 end
 
 @constants SHT_MASKS "" begin
