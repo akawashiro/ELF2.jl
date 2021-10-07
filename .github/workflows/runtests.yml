@@ -1,0 +1,15 @@
+name: Run runtests.jl
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install packages
+      run: sudo apt install julia g++-aarch64-linux-gnu build-essential
+    - name: Test
+      run: cd test && julia runtests.jl
