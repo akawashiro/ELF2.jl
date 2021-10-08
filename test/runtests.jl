@@ -93,16 +93,16 @@ function test_demangle()
 end
 
 @testset "ELF2.jl" begin
-    test_magic()
-    for cc in ["gcc", "aarch64-linux-gnu-gcc", "clang"]
-        test_cc(cc)
-    end
-    for cxx in ["g++", "aarch64-linux-gnu-g++", "clang++"]
-        test_cxx(cxx)
-    end
-    test_command_itself("gcc")
-    test_command_itself("g++")
-    test_command_itself("clang")
-    test_command_itself("clang++")
-    # test_demangle()
+    # test_magic()
+    # for cc in ["gcc", "aarch64-linux-gnu-gcc", "clang"]
+    #     test_cc(cc)
+    # end
+    # for cxx in ["g++", "aarch64-linux-gnu-g++", "clang++"]
+    #     test_cxx(cxx)
+    # end
+    # test_command_itself("gcc")
+    # test_command_itself("g++")
+    # test_command_itself("clang")
+    # test_command_itself("clang++")
+    test_demangle()
 end
