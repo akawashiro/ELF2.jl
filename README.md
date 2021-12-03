@@ -4,8 +4,10 @@
 - demangle
 - 32bits
 - section group
-- decompress
 - debug-dump
+    - We need to tackle debug before compress.
+- decompress
+    - https://gnu.wildebeest.org/blog/mjw/2016/01/13/elf-libelf-compressed-sections-and-elfutils/
 - CI
 - Exhaustive test
     - /bin
