@@ -453,6 +453,31 @@ function note_to_str(n::Note)
     return ret
 end
 
+mutable struct EHFrameHdr 
+    version::UInt8
+    eh_frame_ptr_enc::UInt8
+    fde_count_enc::UInt8
+    table_enc::UInt8
+    EHFrameHdr() = new(0, 0, 0, 0)
+    # eh_frame_ptr
+    # fde_count
+    # binary search table
+end
+
+function read_eh_frame_hdr(io::IOStream)
+    e = EHFrameHdr()
+    @read_field(io, e.version) 
+    @read_field(io, e.eh_frame_ptr_enc)
+    @read_field(io, e.fde_count_enc)
+    @read_field(io, e.table_enc)
+    return e
+end
+
+function eh_frame_hdr_to_str(e::EHFrameHdr)
+    ret = "EHFrameHdr(version=$(e.version), eh_frame_ptr_enc=$(e.eh_frame_ptr_enc), fde_count_enc=$(e.fde_count_enc), table_enc=$(e.table_enc))"
+    return ret
+end
+
 mutable struct ELF
     ehdr::Ehdr
     phdrs::Vector{Phdr}
@@ -469,6 +494,7 @@ mutable struct ELF
     versyms::Vector{UInt16}
     verdefs::Vector{Verdef}
     verneeds::Vector{Verneed}
+    eh_frame_hdr::EHFrameHdr
     ELF() = new(Ehdr(), [], [], [], [], [], [], [], [], [], [], [], [], [], [])
 end
 
@@ -627,6 +653,9 @@ function read_elf(io::IOStream)
                 s = read_sym(io)
                 push!(elf.dynsyms, s)
             end
+        elseif str == ".eh_frame_hdr"
+            seek(io, sh.sh_offset)
+            elf.eh_frame_hdr = read_eh_frame_hdr(io)
         end
 
         if sh.sh_type == SHT_RELA
@@ -637,7 +666,6 @@ function read_elf(io::IOStream)
             end
         end
 
-
         if sh.sh_type == SHT_REL
             seek(io, sh.sh_offset)
             for i = 1:Int64(sh.sh_size/sh.sh_entsize)
@@ -645,7 +673,6 @@ function read_elf(io::IOStream)
                 push!(elf.relas, r)
             end
         end
-
 
         if sh.sh_type == SHT_NOTE
             seek(io, sh.sh_offset)
@@ -787,6 +814,8 @@ function Base.show(io::IO, elf::ELF)
         end
     end
     println("]")
+
+    println("eh_frame_hdr=$(eh_frame_hdr_to_str(elf.eh_frame_hdr))")
 
     println(")")
 end
